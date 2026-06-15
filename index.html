@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Crown Crib Stable Prototype v21</title>
+<style>
+:root{--gold:#d6a33a;--gold2:#ffe3a0;--paper:#f7ead0;--paper2:#e4cd9c;--ink:#20160b;--green:#173b22}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1d2d1c,#050604 70%);color:var(--paper);font-family:Georgia,"Times New Roman",serif}
+header{display:flex;gap:14px;align-items:center;padding:15px 16px;background:#0b110c;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:10}
+.seal{width:54px;height:54px;border:2px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold2);font-size:35px}
+h1{margin:0;color:var(--gold2);text-transform:uppercase;letter-spacing:2px}header p{margin:0;color:#d7c188}
+main{max-width:1120px;margin:auto;padding:14px;display:grid;gap:12px}.panel{background:linear-gradient(#fff7e6,#e4cd9c);color:var(--ink);border:3px solid var(--gold);border-radius:15px;padding:14px;box-shadow:0 9px 25px #0008}
+.sticky{position:sticky;top:76px;z-index:7;padding:8px!important}h2{margin:0 0 8px;color:var(--green);text-transform:uppercase}
+.setupGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}input,select{width:100%;padding:10px;margin-top:4px;border:2px solid #a87425;border-radius:9px;background:#fffaf0;font-size:16px}
+button{border:2px solid var(--gold);border-radius:10px;background:linear-gradient(#1b4627,#0d2113);color:#fff0bc;font-weight:bold;padding:10px 12px;font-size:15px;margin:4px;cursor:pointer}.primary{width:100%;font-size:18px}.smallBtn{padding:6px 9px;font-size:13px}
+.hidden{display:none!important}.dealerBar{background:#fffaf0;color:#20160b;border:2px solid #b98c32;border-radius:12px;padding:7px 9px;font-weight:bold;font-size:14px;margin-bottom:5px}
+.eventBar{background:#173b22;color:#fff0bc;border:2px solid var(--gold);border-radius:12px;padding:7px 9px;font-weight:bold;font-size:14px;line-height:1.25}.eventDetails{background:#fffaf0;color:#20160b;border:2px solid #b98c32;border-radius:12px;padding:8px 10px;margin-top:5px;font-size:14px}
+.diceRow{display:grid;grid-template-columns:auto 76px auto;gap:8px;align-items:center;margin-top:6px}.die{height:64px;width:64px;border:3px solid var(--gold);border-radius:14px;background:#fffaf0;color:var(--green);font-size:38px;font-weight:bold;display:grid;place-items:center}.crown{background:linear-gradient(#7b1e1e,#3d0d0d)}
+.scoreboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.scoreBox{border:2px solid var(--gold);border-radius:14px;padding:10px;background:#fffaf0;text-align:center}.scoreBox.dealer{outline:4px solid var(--gold)}.scoreBox b{display:block;color:var(--green)}.scoreBox span{font-size:42px;font-weight:bold;color:#172617}
+.cards{display:flex;gap:8px;flex-wrap:wrap;min-height:82px}.small{min-height:56px}.card{width:62px;height:86px;border:2px solid #111;border-radius:9px;background:#fff;color:#111;display:grid;place-items:center;font-size:22px;font-weight:bold;box-shadow:0 2px 5px #0007}.card.red{color:#b51616}.card.back{background:#173b22;color:#ffe3a0}.card.selected{outline:4px solid var(--gold)}.card.empty{opacity:.25}.card.played{background:#fff8dc}
+.hint{color:#5d4824;margin:4px 0 8px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.count{font-size:52px;font-weight:bold;color:var(--green)}.lastScore{background:#fffaf0;border:2px solid #b98c32;border-radius:12px;padding:8px 10px;margin-bottom:10px;font-weight:bold}
+#log{max-height:260px;overflow:auto;margin:0;padding-left:22px}#log li{margin:5px 0}
+.popup{position:fixed;left:50%;top:112px;transform:translateX(-50%);z-index:99;background:#7b1e1e;color:#fff0bc;border:3px solid var(--gold);border-radius:16px;padding:14px 18px;font-size:20px;font-weight:bold;box-shadow:0 8px 30px #0009;max-width:90vw}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:grid;place-items:center;padding:16px}.overlayCard{max-width:520px;width:100%;background:linear-gradient(#fff7e6,#e4cd9c);color:#20160b;border:4px solid var(--gold);border-radius:18px;padding:18px;box-shadow:0 12px 40px #000}.overlayCard button{width:100%;font-size:18px;margin-top:12px}
+@media(max-width:700px){.sticky{top:72px}.card{width:54px;height:76px;font-size:19px}.diceRow{grid-template-columns:1fr 70px 1fr}.dealerBar,.eventBar{font-size:12px}}
+
+.eventBox{background:#fffaf0;border:2px solid #b98c32;border-radius:12px;padding:10px;margin:8px 0}
+.eventBox h3{margin:0 0 8px;color:#173b22}
+
+.miniPegStatus{background:#173b22;color:#fff0bc;border:2px solid #d6a33a;border-radius:12px;padding:8px 10px;margin:6px 0 10px;font-weight:bold;font-size:14px;line-height:1.3}
+.manualReveal{background:#fffaf0;border:2px solid #b98c32;border-radius:12px;padding:8px;margin:8px 0}
+
+</style>
+</head>
+<body>
+<header><div class="seal">♛</div><div><h1>Crown Crib</h1><p>Stable Prototype v21</p></div></header>
+<main>
+<section class="panel">
+  <details open id="newGameMenu">
+    <summary><b>☰ New Game / Settings</b></summary>
+    <div class="setupGrid">
+      <label>Mode
+        <select id="mode">
+          <option value="cpu2">2 Player: Me vs CPU</option>
+          <option value="local2">2 Player Local</option>
+        </select>
+      </label>
+      <label>Goal
+        <select id="goal"><option value="121">121 Standard</option><option value="242">242 Epic</option></select>
+      </label>
+      <label>CPU Difficulty
+        <select id="difficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select>
+      </label>
+    </div>
+    <div id="names" class="setupGrid"></div>
+    <button class="primary" id="startBtn">Start New Game</button>
+  </details>
+</section>
+
+<section class="panel sticky">
+  <div id="dealerBar" class="dealerBar">♛ Dealer: -- | 📦 Crib: --</div>
+  <div id="eventBar" class="eventBar">🎲 — No event yet | ⚔ Setup</div>
+  <button id="toggleEvent" class="smallBtn">Hide Event Description</button>
+  <div id="eventDetails" class="eventDetails">Roll the Event Die to begin the round.</div>
+  <div class="diceRow">
+    <button id="rollEventBtn">🎲 Roll Event Die</button>
+    <div id="dieFace" class="die">—</div>
+    <button id="rollCribBtn" class="crown hidden">👑 Crown Crib Roll</button>
+  </div>
+</section>
+
+<section class="panel"><h2>Scores</h2><div id="scores" class="scoreboard"></div></section>
+
+<section class="panel"><h2>Knight's Table</h2><p id="draftHelp" class="hint">Start a game.</p><div id="table" class="cards"></div></section>
+
+<section class="panel"><h2 id="activeHandTitle">Your Hand</h2><p id="turnHelp" class="hint"></p><div id="miniPegStatus" class="miniPegStatus">Peg Count: 0 | Played: none</div><div id="activeHand" class="cards"></div><div id="actions"></div></section>
+
+<section class="panel"><h2>Other Hand</h2><div id="otherHand" class="cards"></div></section>
+
+<section class="panel"><h2>Event Resolution</h2><p class="hint" id="eventHelp">Events 4–6 appear here after Starter reveal.</p><div id="eventArea"></div></section>
+
+<section class="panel">
+  <h2>Pegging</h2>
+  <div id="lastScore" class="lastScore">Last Score: none</div>
+  <div class="grid3">
+    <div><b>Count</b><div id="pegCount" class="count">0</div></div>
+    <div><b>Current Count Cards</b><div id="playedCards" class="cards small"></div></div>
+    <div><b>Full Sequence</b><div id="pegSeq" class="cards small"></div></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Crib / Starter / Scoring</h2>
+  <div class="grid3">
+    <div><b>Crib</b><p id="cribHelp" class="hint">Hidden until crib scoring.</p><div id="crib" class="cards small"></div></div>
+    <div><b>Starter</b><div id="starter" class="cards small"></div></div>
+    <div><b>Manual Scoring</b><div id="manualScore"></div></div>
+  </div>
+</section>
+
+<section class="panel"><h2>Log</h2><ol id="log"></ol></section>
+</main>
+
+<div id="overlay" class="overlay hidden"><div class="overlayCard"><h2 id="overlayTitle">Title</h2><div id="overlayBody"></div><button id="overlayBtn">Continue</button></div></div>
+<div id="popup" class="popup hidden"></div>
+
+<script>
+const suits=['♠','♥','♦','♣'];
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const events={
+  1:['Tempo Surge','Runs: 3=4 pts, 4=6 pts, 5=8 pts, +2 after 5.'],
+  2:['Golden Fifteens','All 15s score 3 points.'],
+  3:['Crowned Pairs','Pair=3, 3 of a Kind=9, 4 of a Kind=16, 5 of a Kind=25.'],
+  4:['Royal Rotation','After Starter reveal: pass 1 card of your choice left.'],
+  5:['Kingdom Tax','After Starter reveal: 2 cards to shared pool, dealer shuffles, give 2 back.'],
+  6:['Public Shame','After Starter reveal: player on left reveals 1 card, discards it to bottom, replace from top.']
+};
+let G={active:false,log:[],mode:'cpu2'};
+const $=id=>document.getElementById(id);
+function v(c){return c.r==='A'?1:['J','Q','K'].includes(c.r)?10:Number(c.r)}
+function rn(r){return r==='A'?1:r==='J'?11:r==='Q'?12:r==='K'?13:Number(r)}
+function txt(c){return c.r+c.s}
+function shuf(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function newDeck(){let d=[];for(const s of suits)for(const r of ranks)d.push({r,s,id:r+s+Math.random().toString(36).slice(2)});return shuf(d)}
+function log(t){G.log.push(t);renderLog()}
+function name(i){return G.players?.[i]?.name||'--'}
+function leftDealer(){return (G.dealer+1)%G.players.length}
+function isCPU(i){return G.players?.[i]?.isCPU}
+function teamIndex(i){return i}
+function scoreAdd(i,pts){G.scores[i]+=pts;log(name(i)+' +'+pts); if(G.scores[i]>=G.goal){G.phase='gameOver';showOverlay('👑 Victory','<p>'+name(i)+' reached '+G.goal+' first.</p>','Play Again',()=>{});}}
+function phaseLabel(){return ({roll:'Roll Event',draft:'Draft',discard:'Discard',event:'Resolve Event',peg:'Pegging',scoreHand:'Hand Scoring',cribRoll:'Crown Crib Roll',scoreCrib:'Crib Scoring',gameOver:'Game Over'}[G.phase]||G.phase||'Setup')}
+function eventLine(){return G.event?('🎲 '+G.event+' '+events[G.event][0]+' — '+events[G.event][1]+' | ⚔ '+phaseLabel()):'🎲 — No event yet | ⚔ '+phaseLabel()}
+function popup(t){$('popup').textContent=t;$('popup').classList.remove('hidden');clearTimeout(window.popT);window.popT=setTimeout(()=>$('popup').classList.add('hidden'),1200)}
+function showOverlay(title,body,btn,cb){$('overlayTitle').textContent=title;$('overlayBody').innerHTML=body;$('overlayBtn').textContent=btn;$('overlayBtn').onclick=()=>{$('overlay').classList.add('hidden');cb&&cb()};$('overlay').classList.remove('hidden')}
+
+function renderNameInputs(){let mode=$('mode').value;$('names').innerHTML='';let names=mode==='cpu2'?['Player 1','CPU 1']:['Player 1','Player 2'];for(let i=0;i<2;i++){let lab=document.createElement('label');lab.textContent='Name '+(i+1);let inp=document.createElement('input');inp.id='p'+i;inp.value=names[i];lab.appendChild(inp);$('names').appendChild(lab)}}
+$('mode').onchange=renderNameInputs;renderNameInputs();
+
+$('startBtn').onclick=()=>{if(G.active&&G.phase!=='gameOver'&&!confirm('Start a new game and lose current progress?'))return;let mode=$('mode').value;G={active:true,mode,players:[{name:$('p0').value||'Player 1',hand:[],isCPU:false},{name:$('p1').value||(mode==='cpu2'?'CPU 1':'Player 2'),hand:[],isCPU:mode==='cpu2'}],scores:[0,0],goal:+$('goal').value,diff:$('difficulty').value,deck:newDeck(),dealer:Math.floor(Math.random()*2),event:null,phase:'roll',table:[],crib:[],starter:null,selected:null,activePlayer:null,draftOrder:[],draftIndex:0,peg:{count:0,hands:[[],[]],played:[],seq:[],last:null},scoringOrder:[],scoreIndex:0,cribEvent:0,eventData:null,log:[]};log('New game. Dealer: '+name(G.dealer));$('newGameMenu').open=false;render();}
+$('toggleEvent').onclick=()=>{$('eventDetails').classList.toggle('hidden')}
+
+$('rollEventBtn').onclick=()=>{if(G.phase!=='roll')return;let r=1+Math.floor(Math.random()*6);animateDie(r,()=>{G.event=r;log('Event Die: '+r+' '+events[r][0]);dealDraft()})}
+function animateDie(final,cb){let n=0;let timer=setInterval(()=>{$('dieFace').textContent=1+Math.floor(Math.random()*6);if(++n>=10){clearInterval(timer);$('dieFace').textContent=final;cb()}},55)}
+
+function dealDraft(){G.players.forEach(p=>p.hand=[]);G.table=[];G.crib=[];G.starter=null;G.selected=null;for(let k=0;k<3;k++){G.players[0].hand.push(G.deck.pop());G.players[1].hand.push(G.deck.pop())}for(let i=0;i<6;i++)G.table.push(G.deck.pop());let first=leftDealer(), second=G.dealer;G.draftOrder=[first,second,second,first];G.draftIndex=0;G.activePlayer=G.draftOrder[0];G.phase='draft';log('Draft order: '+G.draftOrder.map(name).join(' → '));render();continueCPU();}
+function desire(c,hand){let s=c.r==='K'?14:0;for(const h of hand){if(h.r===c.r)s+=6;if(v(h)+v(c)===15)s+=5;if(Math.abs(rn(h.r)-rn(c.r))<=2)s+=2}return s}
+function cpuDraft(){if(G.phase!=='draft'||!isCPU(G.activePlayer))return;let av=G.table.map((c,i)=>({c,i})).filter(x=>x.c);if(!av.length){nextDraft();return}let pick=av[0],best=-999;if(G.diff==='easy')pick=av[Math.floor(Math.random()*av.length)];else{for(const x of av){let sc=desire(x.c,G.players[G.activePlayer].hand);if(sc>best){best=sc;pick=x}}}G.players[G.activePlayer].hand.push(pick.c);G.table[pick.i]=null;log(name(G.activePlayer)+' drafted.');nextDraft();}
+function draftCard(i){if(G.phase!=='draft'||isCPU(G.activePlayer)||!G.table[i])return;let c=G.table[i];G.table[i]=null;G.players[G.activePlayer].hand.push(c);log(name(G.activePlayer)+' drafted '+txt(c));nextDraft();}
+function nextDraft(){G.draftIndex++;if(G.draftIndex>=G.draftOrder.length){G.phase='discard';G.activePlayer=leftDealer();log('Draft complete. Discard 1 card to crib.');render();continueCPU();return}G.activePlayer=G.draftOrder[G.draftIndex];render();continueCPU()}
+function continueCPU(){if(isCPU(G.activePlayer)&&(G.phase==='draft'||G.phase==='discard'||G.phase==='peg'))setTimeout(()=>{if(G.phase==='draft')cpuDraft();else if(G.phase==='discard')cpuDiscard();else if(G.phase==='peg')cpuPeg();},500)}
+
+function select(i){G.selected=i;render()}
+function discardSelected(){if(G.phase!=='discard'||isCPU(G.activePlayer)||G.selected==null)return;let c=G.players[G.activePlayer].hand.splice(G.selected,1)[0];G.crib.push(c);log(name(G.activePlayer)+' discarded to crib.');nextDiscard()}
+function cpuDiscard(){if(G.phase!=='discard'||!isCPU(G.activePlayer))return;let hand=G.players[G.activePlayer].hand;let idx=0,b=999;for(let i=0;i<hand.length;i++){let d=desire(hand[i],hand.filter((_,j)=>j!==i));if(d<b){b=d;idx=i}}G.crib.push(hand.splice(idx,1)[0]);log(name(G.activePlayer)+' discarded to crib.');nextDiscard()}
+function nextDiscard(){G.selected=null;G.activePlayer=(G.activePlayer+1)%2;if(G.activePlayer===leftDealer()){G.table.filter(Boolean).forEach(c=>G.crib.push(c));G.table=G.table.map(()=>null);G.starter=drawStarter();log('Starter: '+txt(G.starter));if(G.starter.r==='J')scoreAdd(G.dealer,2);afterStarter();return}render();continueCPU()}
+function drawStarter(){let c=G.deck.pop();while(c.r==='K'){G.deck.unshift(c);c=G.deck.pop()}return c}
+function afterStarter(){
+  if(G.phase==='gameOver'){render();return}
+  if(G.event===4){
+    G.phase='event4';
+    G.activePlayer=0;
+    G.eventData={passed:{}};
+    log('Royal Rotation: each player passes 1 card left after Starter reveal.');
+    render();
+    if(isCPU(G.activePlayer)) setTimeout(cpuEvent4,500);
+  } else if(G.event===5){
+    G.phase='event5';
+    G.activePlayer=0;
+    G.eventData={pool:[], contributed:{0:0,1:0}};
+    log('Kingdom Tax: each player puts 2 cards into a shared pool. Dealer shuffles and returns 2 to each player.');
+    render();
+    if(isCPU(G.activePlayer)) setTimeout(cpuEvent5,500);
+  } else if(G.event===6){
+    G.phase='event6';
+    G.activePlayer=0;
+    G.eventData={done:{}};
+    log('Public Shame: choose 1 face-down opponent card to reveal, discard to bottom, and replace from top.');
+    render();
+    if(isCPU(G.activePlayer)) setTimeout(cpuEvent6,500);
+  } else beginPeg()
+}
+
+function worstCardIndex(hand){
+  let idx=0,b=999;
+  for(let i=0;i<hand.length;i++){let d=desire(hand[i],hand.filter((_,j)=>j!==i));if(d<b){b=d;idx=i}}
+  return idx;
+}
+function chooseEventCard(i){
+  if(G.phase==='event4') event4Choose(i);
+  else if(G.phase==='event5') event5Choose(i);
+}
+function event4Choose(i){
+  if(G.phase!=='event4'||isCPU(G.activePlayer))return;
+  let p=G.players[G.activePlayer];
+  if(!p.hand[i])return;
+  G.eventData.passed[G.activePlayer]=p.hand.splice(i,1)[0];
+  log(name(G.activePlayer)+' selected a card to pass left.');
+  nextEvent4();
+}
+function cpuEvent4(){
+  if(G.phase!=='event4'||!isCPU(G.activePlayer))return;
+  let p=G.players[G.activePlayer];
+  let idx=worstCardIndex(p.hand);
+  G.eventData.passed[G.activePlayer]=p.hand.splice(idx,1)[0];
+  log(name(G.activePlayer)+' selected a card to pass left.');
+  nextEvent4();
+}
+function nextEvent4(){
+  if(G.activePlayer===0){G.activePlayer=1;render();if(isCPU(G.activePlayer))setTimeout(cpuEvent4,500);return}
+  // 2P left pass = swap selected cards
+  G.players[0].hand.push(G.eventData.passed[1]);
+  G.players[1].hand.push(G.eventData.passed[0]);
+  log('Royal Rotation complete: selected cards were passed left.');
+  beginPeg();
+}
+function event5Choose(i){
+  if(G.phase!=='event5'||isCPU(G.activePlayer))return;
+  let p=G.players[G.activePlayer];
+  if(!p.hand[i])return;
+  let c=p.hand.splice(i,1)[0];
+  G.eventData.pool.push({from:G.activePlayer,c});
+  G.eventData.contributed[G.activePlayer]++;
+  log(name(G.activePlayer)+' added a card to the Kingdom Tax pool.');
+  if(G.eventData.contributed[G.activePlayer]>=2) nextEvent5();
+  else render();
+}
+function cpuEvent5(){
+  if(G.phase!=='event5'||!isCPU(G.activePlayer))return;
+  let p=G.players[G.activePlayer];
+  while(G.eventData.contributed[G.activePlayer]<2 && p.hand.length){
+    let idx=worstCardIndex(p.hand);
+    let c=p.hand.splice(idx,1)[0];
+    G.eventData.pool.push({from:G.activePlayer,c});
+    G.eventData.contributed[G.activePlayer]++;
+  }
+  log(name(G.activePlayer)+' added 2 cards to the Kingdom Tax pool.');
+  nextEvent5();
+}
+function nextEvent5(){
+  if(G.activePlayer===0){G.activePlayer=1;render();if(isCPU(G.activePlayer))setTimeout(cpuEvent5,500);return}
+  let pool=G.eventData.pool.map(x=>x.c);
+  shuf(pool);
+  // Dealer shuffles and returns 2 to each player
+  G.players[0].hand.push(pool.pop(),pool.pop());
+  G.players[1].hand.push(pool.pop(),pool.pop());
+  log('Kingdom Tax complete: dealer shuffled the pool and returned 2 cards to each player.');
+  beginPeg();
+}
+function event6Choose(targetIdx,cardIdx){
+  if(G.phase!=='event6'||isCPU(G.activePlayer))return;
+  resolveEvent6(targetIdx,cardIdx);
+}
+function cpuEvent6(){
+  if(G.phase!=='event6'||!isCPU(G.activePlayer))return;
+  let target=G.activePlayer===0?1:0;
+  let idx=Math.floor(Math.random()*G.players[target].hand.length);
+  resolveEvent6(target,idx);
+}
+function resolveEvent6(targetIdx,cardIdx){
+  let target=G.players[targetIdx];
+  if(!target.hand[cardIdx])return;
+  let killed=target.hand.splice(cardIdx,1)[0];
+  G.deck.unshift(killed); // bottom of deck
+  target.hand.push(G.deck.pop()); // top replacement
+  log(name(G.activePlayer)+' revealed and killed '+name(targetIdx)+"'s "+txt(killed)+'. Replacement drawn from top.');
+  G.eventData.done[G.activePlayer]=true;
+  if(G.activePlayer===0){G.activePlayer=1;render();if(isCPU(G.activePlayer))setTimeout(cpuEvent6,500);return}
+  log('Public Shame complete.');
+  beginPeg();
+}
+
+function beginPeg(){G.phase='peg';G.activePlayer=leftDealer();G.peg={count:0,hands:[...G.players.map(p=>[...p.hand])],played:[],seq:[],last:null};log('Pegging begins. Non-dealer leads: '+name(G.activePlayer));render();continueCPU()}
+function legal(i){
+  return G.peg.hands[i].map((c,idx)=>({c,idx})).filter(x=>G.peg.count+v(x.c)<=31)
+}
+function nextPlayer(i){ return (i+1)%2 }
+
+function pegCard(i){
+  if(G.phase!=='peg'||isCPU(G.activePlayer))return;
+  if(!legal(G.activePlayer).find(x=>x.idx===i))return alert('That card would go over 31.');
+  playPeg(G.activePlayer,i);
+  afterPegPlay();
+}
+
+function cpuPeg(){
+  if(G.phase!=='peg'||!isCPU(G.activePlayer))return;
+  let l=legal(G.activePlayer);
+  if(!l.length){ handleGo(); return; }
+  let pick=l[0],bp=-1;
+  for(const x of l){
+    let old=G.peg.count,oldp=[...G.peg.played];
+    G.peg.count+=v(x.c); G.peg.played.push(x.c);
+    let p=pegPts();
+    G.peg.count=old; G.peg.played=oldp;
+    if(p>bp){bp=p;pick=x}
+  }
+  playPeg(G.activePlayer,pick.idx);
+  afterPegPlay();
+}
+
+function playPeg(pi,idx){
+  let c=G.peg.hands[pi].splice(idx,1)[0];
+  G.peg.played.push(c);
+  G.peg.seq.push({pi,c});
+  G.peg.count+=v(c);
+  G.peg.last=pi;
+  let pts=pegPts();
+
+  if(pts){
+    scoreAdd(pi,pts);
+    $('lastScore').textContent='Last Score: +'+pts+' by '+name(pi);
+    popup('+'+pts+' pegging score');
+  }
+
+  log(name(pi)+' played '+txt(c)+'. Count '+G.peg.count);
+
+  if(G.phase==='gameOver')return;
+
+  if(G.peg.count===31){
+    scoreAdd(pi,2);
+    $('lastScore').textContent='Last Score: +2 for 31 by '+name(pi);
+    popup('+2 — 31');
+    log(name(pi)+' scored 31 for 2.');
+    G.peg.count=0;
+    G.peg.played=[];
+    G.activePlayer=nextPlayer(pi);
+    skipToNextPlayableOrFinish();
+  }
+}
+
+function afterPegPlay(){
+  if(G.phase==='gameOver'){render();return}
+
+  if(G.peg.hands.every(h=>h.length===0)){
+    if(G.peg.count!==0 && G.peg.last!=null){
+      scoreAdd(G.peg.last,1);
+      popup('+1 last card');
+      $('lastScore').textContent='Last Score: +1 Last Card by '+name(G.peg.last);
+      log(name(G.peg.last)+' scored 1 for last card.');
+    }
+    finishPeg();
+    return;
+  }
+
+  if(G.peg.count!==0){
+    G.activePlayer=nextPlayer(G.activePlayer);
+    skipToNextPlayableOrGo();
+  }
+
+  render();
+  continueCPU();
+}
+
+function skipToNextPlayableOrGo(){
+  if(legal(G.activePlayer).length) return;
+  log(name(G.activePlayer)+' says Go.');
+  let other=nextPlayer(G.activePlayer);
+  if(legal(other).length){
+    G.activePlayer=other;
+    return;
+  }
+  if(G.peg.last!=null){
+    scoreAdd(G.peg.last,1);
+    popup('+1 Go');
+    $('lastScore').textContent='Last Score: +1 Go by '+name(G.peg.last);
+    log(name(G.peg.last)+' scored 1 for Go.');
+    G.peg.count=0;
+    G.peg.played=[];
+    G.activePlayer=nextPlayer(G.peg.last);
+    skipToNextPlayableOrFinish();
+  }
+}
+
+function skipToNextPlayableOrFinish(){
+  if(G.peg.hands.every(h=>h.length===0)){
+    finishPeg();
+    return;
+  }
+  if(legal(G.activePlayer).length) return;
+  let other=nextPlayer(G.activePlayer);
+  if(legal(other).length){ G.activePlayer=other; return; }
+  if(G.peg.last!=null && G.peg.count!==0){
+    scoreAdd(G.peg.last,1);
+    popup('+1 Go');
+    $('lastScore').textContent='Last Score: +1 Go by '+name(G.peg.last);
+    log(name(G.peg.last)+' scored 1 for Go.');
+  }
+  G.peg.count=0;
+  G.peg.played=[];
+  G.activePlayer=nextPlayer(G.peg.last ?? G.activePlayer);
+}
+
+function go(){
+  if(G.phase!=='peg')return;
+  if(legal(G.activePlayer).length)return alert('You have a legal card.');
+  handleGo();
+}
+
+function handleGo(){
+  log(name(G.activePlayer)+' says Go.');
+  let other=nextPlayer(G.activePlayer);
+  if(legal(other).length){
+    G.activePlayer=other;
+  } else {
+    if(G.peg.last!=null){
+      scoreAdd(G.peg.last,1);
+      popup('+1 Go');
+      $('lastScore').textContent='Last Score: +1 Go by '+name(G.peg.last);
+      log(name(G.peg.last)+' scored 1 for Go.');
+    }
+    G.peg.count=0;
+    G.peg.played=[];
+    G.activePlayer=nextPlayer(G.peg.last ?? G.activePlayer);
+    skipToNextPlayableOrFinish();
+  }
+  render();
+  continueCPU();
+}
+
+function pegPts(){
+  let p=0,a=G.peg.played,n=a.length;
+  if(G.peg.count===15)p+=G.event===2?3:2;
+  if(n>=2){
+    let same=1;
+    for(let i=n-2;i>=0;i--){if(a[i].r===a[n-1].r)same++;else break}
+    if(same===2)p+=G.event===3?3:2;
+    if(same===3)p+=G.event===3?9:6;
+    if(same===4)p+=G.event===3?16:12;
+  }
+  for(let len=Math.min(7,n);len>=3;len--){
+    let t=a.slice(n-len).map(c=>rn(c.r)).sort((x,y)=>x-y);
+    let ok=new Set(t).size===len&&t.every((x,i)=>i===0||x===t[i-1]+1);
+    if(ok){p+=G.event===1?(len===3?4:len===4?6:8):len;break}
+  }
+  return p
+}
+
+function finishPeg(){G.phase='scoreHand';G.scoringOrder=[leftDealer(),G.dealer];G.scoreIndex=0;G.activePlayer=G.scoringOrder[0];log('Score hands: non-dealer first, dealer last.');render()}
+function submitHand(){let pts=Number($('handScore').value);if(!Number.isFinite(pts))return;scoreAdd(G.activePlayer,pts);if(G.phase==='gameOver'){render();return}G.scoreIndex++;if(G.scoreIndex>=G.scoringOrder.length){if(G.event>=4){G.phase='cribRoll';log('Crown Crib Roll needed.');render()}else{G.cribEvent=G.event;G.phase='scoreCrib';render()}}else{G.activePlayer=G.scoringOrder[G.scoreIndex];render()}}
+$('rollCribBtn').onclick=()=>{if(G.phase!=='cribRoll')return;let r=1+Math.floor(Math.random()*6);animateDie(r,()=>{G.cribEvent=r<=3?r:0;log('Crown Crib Roll: '+r+(r<=3?' '+events[r][0]:' normal crib'));G.phase='scoreCrib';render()})}
+function submitCrib(){let pts=Number($('cribScore').value);if(!Number.isFinite(pts))return;scoreAdd(G.dealer,pts);if(G.phase==='gameOver'){render();return}let totals=G.players.map((p,i)=>p.name+': '+G.scores[i]).join('<br>');showOverlay('Round Complete','<p>'+totals+'</p>','Pass Event Die / Next Round',()=>{G.dealer=(G.dealer+1)%2;G.phase='roll';G.event=null;$('dieFace').textContent='—';log('Dealer rotates to '+name(G.dealer));render()})}
+
+function updateMiniPegStatus(){
+  const el=$('miniPegStatus'); if(!el) return;
+  if(!G.active || !G.peg){ el.textContent='Peg Count: 0 | Played: none'; return; }
+  const played=(G.peg.played||[]).map(txt).join(' ');
+  el.textContent='Peg Count: '+(G.peg.count||0)+' | Played: '+(played||'none');
+}
+
+function render(){renderScores();renderCards();updateMiniPegStatus();renderManual();renderEventArea();renderLog();$('dealerBar').textContent='♛ Dealer: '+(G.active?name(G.dealer):'--')+' | 📦 Crib: '+(G.active?name(G.dealer):'--');$('eventBar').textContent=eventLine();$('eventDetails').textContent=G.event?('🎲 Event '+G.event+' '+events[G.event][0]+' — '+events[G.event][1]):'Roll the Event Die to begin.';$('rollEventBtn').disabled=G.phase!=='roll';$('rollCribBtn').classList.toggle('hidden',G.phase!=='cribRoll');$('draftHelp').textContent=G.phase==='draft'?'Draft pick: '+name(G.activePlayer):'';$('turnHelp').textContent=G.active?('Active: '+name(G.activePlayer)+' | '+phaseLabel()):'Start a game.'}
+function renderScores(){let s=$('scores');s.innerHTML='';if(!G.players)return;G.players.forEach((p,i)=>{let b=document.createElement('div');b.className='scoreBox '+(i===G.dealer?'dealer':'');b.innerHTML='<b>'+(i===G.dealer?'♛ ':'')+p.name+'</b><span>'+G.scores[i]+'</span>';s.appendChild(b)})}
+function card(c,click,extra=''){let e=document.createElement(click?'button':'div');e.className='card '+((c.s==='♥'||c.s==='♦')?'red ':'')+extra;e.textContent=txt(c);if(click)e.onclick=click;return e}
+function back(){let e=document.createElement('div');e.className='card back';e.textContent='🂠';return e}
+function empty(){let e=document.createElement('div');e.className='card empty';e.textContent='--';return e}
+function renderCards(){let t=$('table');t.innerHTML='';(G.table||[]).forEach((c,i)=>t.appendChild(c?card(c,()=>draftCard(i)):empty()));let h=$('activeHand');h.innerHTML='';$('activeHandTitle').textContent=G.active?'Hand: '+name(G.activePlayer):'Your Hand';let hand=G.phase==='peg'?G.peg.hands[G.activePlayer]:(G.players?.[G.activePlayer]?.hand||[]);hand.forEach((c,i)=>h.appendChild((isCPU(G.activePlayer)&&G.phase!=='scoreHand'&&G.phase!=='scoreCrib'&&G.phase!=='gameOver')?back():card(c,()=>G.phase==='peg'?pegCard(i):(G.phase==='event4'||G.phase==='event5')?chooseEventCard(i):select(i),G.selected===i?'selected':'')));let other=$('otherHand');other.innerHTML='';if(G.players){let oi=(G.activePlayer+1)%2;let oh=G.phase==='peg'?G.peg.hands[oi]:G.players[oi].hand;let reveal=G.phase==='scoreHand'||G.phase==='scoreCrib'||G.phase==='gameOver';oh.forEach(c=>other.appendChild(reveal?card(c):back()))}let cr=$('crib');cr.innerHTML='';let rev=G.phase==='scoreCrib'||G.phase==='gameOver';(G.crib||[]).forEach(c=>cr.appendChild(rev?card(c):back()));$('cribHelp').textContent=rev?'Crib revealed for scoring.':'Hidden until crib scoring.';let st=$('starter');st.innerHTML='';if(G.starter)st.appendChild(card(G.starter));$('pegCount').textContent=G.peg?.count||0;let pc=$('playedCards');pc.innerHTML='';(G.peg?.played||[]).forEach(c=>pc.appendChild(card(c,null,'played')));let ps=$('pegSeq');ps.innerHTML='';(G.peg?.seq||[]).forEach(x=>ps.appendChild(card(x.c,null,'played')));renderActions()}
+function renderActions(){let a=$('actions');a.innerHTML='';if(G.phase==='discard'&&!isCPU(G.activePlayer)){let b=document.createElement('button');b.textContent='Discard Selected to Crib';b.onclick=discardSelected;a.appendChild(b)}if(G.phase==='peg'&&!isCPU(G.activePlayer)){let b=document.createElement('button');b.textContent='Go';b.onclick=go;a.appendChild(b)}}
+function renderManual(){let m=$('manualScore');m.innerHTML='';if(G.phase==='scoreHand'){
+    m.innerHTML='<p class="hint">Score '+name(G.activePlayer)+' hand manually. CPU hand is revealed here for checking/correction.</p><div class="manualReveal"><div class="cards small" id="scoreHandCards"></div></div><input id="handScore" type="number" min="0" value="0"><button id="submitHand">Submit Hand</button>';
+    setTimeout(()=>{let sc=$('scoreHandCards'); if(sc){G.players[G.activePlayer].hand.forEach(c=>sc.appendChild(card(c))); if(G.starter)sc.appendChild(card(G.starter,null,'played'));} $('submitHand').onclick=submitHand},0)
+  }else if(G.phase==='scoreCrib'){m.innerHTML='<p class="hint">Score crib for '+name(G.dealer)+'. Effect: '+(G.cribEvent?events[G.cribEvent][0]:'Normal')+'</p><input id="cribScore" type="number" min="0" value="0"><button id="submitCrib">Submit Crib</button>';setTimeout(()=>$('submitCrib').onclick=submitCrib,0)}else m.innerHTML='<p class="hint">Manual scoring appears after pegging.</p>'}
+
+function renderEventArea(){
+  let area=$('eventArea'); if(!area)return;
+  area.innerHTML='';
+  $('eventHelp').textContent='Events 4–6 appear here after Starter reveal.';
+  if(G.phase==='event4'){
+    $('eventHelp').textContent='Royal Rotation: '+name(G.activePlayer)+' chooses 1 card to pass left.';
+    let box=document.createElement('div');box.className='eventBox';box.innerHTML='<h3>Royal Rotation</h3><p>Tap one card in the active hand to pass left.</p>';area.appendChild(box);
+  } else if(G.phase==='event5'){
+    let need=2-(G.eventData?.contributed?.[G.activePlayer]||0);
+    $('eventHelp').textContent='Kingdom Tax: '+name(G.activePlayer)+' chooses '+need+' more card(s) for the shared pool.';
+    let box=document.createElement('div');box.className='eventBox';box.innerHTML='<h3>Kingdom Tax Pool</h3><p>Tap cards in the active hand until 2 cards are added. Pool size: '+(G.eventData?.pool?.length||0)+'</p><div class="cards small" id="taxPool"></div>';area.appendChild(box);
+    let poolEl=$('taxPool');(G.eventData?.pool||[]).forEach(()=>poolEl.appendChild(back()));
+  } else if(G.phase==='event6'){
+    let target=G.activePlayer===0?1:0;
+    $('eventHelp').textContent='Public Shame: '+name(G.activePlayer)+' chooses one face-down card from '+name(target)+'.';
+    let box=document.createElement('div');box.className='eventBox';box.innerHTML='<h3>Public Shame</h3><p>Choose one of '+name(target)+"'s face-down cards to reveal, discard, and replace.</p><div class=\"cards small\" id=\"shameCards\"></div>";area.appendChild(box);
+    let row=$('shameCards');G.players[target].hand.forEach((c,i)=>{let b=back();if(!isCPU(G.activePlayer))b.onclick=()=>event6Choose(target,i);row.appendChild(b)});
+  }
+}
+
+function renderLog(){let l=$('log');l.innerHTML='';(G.log||[]).slice().reverse().forEach(x=>{let li=document.createElement('li');li.textContent=x;l.appendChild(li)})}
+render();
+
+</script>
+</body>
+</html>
